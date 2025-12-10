@@ -2,90 +2,172 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>西门子PLC模拟量换算工具（自由输入Ish/Isl/Osh/Osl）</title>
+<title>西门子PLC模拟量换算工具</title>
 <style>
-    body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 20px; background: #f4f4f4; }
-    .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #0056b3; }
-    .section { margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; }
-    label { display: block; margin: 12px 0 6px; font-weight: bold; }
-    input, select { width: 100%; padding: 10px; box-sizing: border-box; font-size: 1em; }
-    .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
-    .input-group input { flex: 1; min-width: 150px; }
-    button { padding: 12px 24px; background: #0056b3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; }
-    button:hover { background: #003d80; }
-    .btn-group button { margin-right: 10px; margin-bottom: 10px; }
-    .result { margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; font-size: 1.2em; color: #d32f2f; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-    th { background: #0056b3; color: white; }
+    body {
+        font-family: "Microsoft YaHei", Arial, sans-serif;
+        margin: 20px;
+        background: #f0f0f0;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><text x="50" y="50" font-size="12" fill="%23e0e0e0" text-anchor="middle" dominant-baseline="middle">德龙钢铁有限公司</text></svg>');
+        background-repeat: repeat;
+    }
+    .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+    h1 {
+        text-align: center;
+        color: #003366;
+        margin-bottom: 30px;
+    }
+    .table-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin: 30px 0;
+    }
+    .row {
+        display: flex;
+        border: 2px solid #0056b3;
+    }
+    .cell {
+        flex: 1;
+        border-right: 2px solid #0056b3;
+        padding: 20px;
+        text-align: center;
+        background: #e6f2ff;
+        font-size: 1.1em;
+        font-weight: bold;
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cell:last-child { border-right: none; }
+    .label {
+        font-size: 1.3em;
+        color: #003366;
+        margin-bottom: 10px;
+    }
+    .input-box {
+        width: 100%;
+        padding: 12px;
+        font-size: 1.2em;
+        text-align: center;
+        border: 2px solid #0056b3;
+        border-radius: 6px;
+        background: white;
+    }
+    .button-group {
+        text-align: center;
+        margin: 30px 0;
+    }
+    button {
+        padding: 10px 20px;
+        margin: 5px;
+        background: #0056b3;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1em;
+    }
+    button:hover { background: #003366; }
+    .result {
+        margin-top: 20px;
+        padding: 20px;
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        font-size: 1.2em;
+        color: #d32f2f;
+        text-align: center;
+    }
+    .preset-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 40px;
+    }
+    .preset-table th, .preset-table td {
+        border: 1px solid #0056b3;
+        padding: 10px;
+        text-align: center;
+    }
+    .preset-table th {
+        background: #0056b3;
+        color: white;
+    }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>西门子PLC模拟量换算工具（自由输入范围）</h1>
-    <p style="text-align:center;">支持任意原始值范围（Ish/Isl）和工程量范围（Osh/Osl），自动计算电流（4-20mA）</p>
+    <h1>西门子PLC模拟量换算工具</h1>
 
-    <div class="section">
-        <h3>参数设置（Ish、Isl、Osh、Osl 可自由修改）</h3>
-        <div class="input-group">
-            <div>
-                <label>原始值下限 Isl</label>
-                <input type="number" id="isl" value="6400" step="any">
-            </div>
-            <div>
-                <label>原始值上限 Ish</label>
-                <input type="number" id="ish" value="32000" step="any">
-            </div>
-            <div>
-                <label>工程量下限 Osl</label>
-                <input type="number" id="osl" value="-50" step="any">
-            </div>
-            <div>
-                <label>工程量上限 Osh</label>
-                <input type="number" id="osh" value="150" step="any">
-            </div>
+    <!-- 常用预设按钮 -->
+    <div class="button-group">
+        <button onclick="setPreset('s7-200')">S7-200 (6400~32000)</button>
+        <button onclick="setPreset('s7-1200')">S7-1200/1500 (5530~27648)</button>
+        <button onclick="setPreset('temp')">温度 -50~150°C</button>
+        <button onclick="setPreset('pressure')">压力 0~10 MPa</button>
+        <button onclick="setPreset('flow')">流量 0~100 m³/h</button>
+        <button onclick="setPreset('percent')">百分比 0~100%</button>
+    </div>
+
+    <!-- 表格布局（严格按手写图片样式） -->
+    <div class="table-container">
+        <!-- 第一行：参数设置 -->
+        <div class="row">
+            <div class="cell">Isl<br>原始值下限</div>
+            <div class="cell">Ish<br>原始值上限</div>
+            <div class="cell">Osl<br>工程量下限</div>
+            <div class="cell">Osh<br>工程量上限</div>
+        </div>
+        <div class="row">
+            <div class="cell"><input type="number" id="isl" class="input-box" value="6400" step="any"></div>
+            <div class="cell"><input type="number" id="ish" class="input-box" value="32000" step="any"></div>
+            <div class="cell"><input type="number" id="osl" class="input-box" value="-50" step="any"></div>
+            <div class="cell"><input type="number" id="osh" class="input-box" value="150" step="any"></div>
         </div>
 
-        <div class="btn-group" style="margin-top:15px;">
-            <button onclick="setPreset('s7-200')">S7-200/SMART (6400~32000)</button>
-            <button onclick="setPreset('s7-1200')">S7-1200/1500 (5530~27648)</button>
-            <button onclick="setPreset('temp')">温度 -50~150°C</button>
-            <button onclick="setPreset('pressure')">压力 0~10 MPa</button>
-            <button onclick="setPreset('flow')">流量 0~100 m³/h</button>
-            <button onclick="setPreset('percent')">百分比 0~100%</button>
+        <!-- 第二行：输入区 -->
+        <div class="row">
+            <div class="cell">
+                <div class="label">电流 (mA)</div>
+                <input type="number" id="current" class="input-box" placeholder="4.0~20.0" step="any">
+            </div>
+            <div class="cell">
+                <div class="label">工程量</div>
+                <input type="number" id="eng" class="input-box" placeholder="例如 50.0" step="any">
+            </div>
+            <div class="cell">
+                <div class="label">原始值</div>
+                <input type="number" id="raw" class="input-box" placeholder="例如 16000" step="any">
+            </div>
+            <div class="cell">
+                <button onclick="calculate()" style="font-size:1.2em; padding:15px 30px;">计算</button>
+            </div>
         </div>
     </div>
 
-    <div class="section">
-        <label>输入原始值（Raw Value）</label>
-        <input type="number" id="raw" placeholder="例如 16000" step="any">
+    <!-- 结果显示 -->
+    <div class="result" id="result">请输入任意一个值（电流、工程量或原始值）进行换算</div>
 
-        <label>输入工程量（Engineering Value）</label>
-        <input type="number" id="eng" placeholder="例如 50.0" step="any">
-
-        <label>输入电流（mA，4-20mA）</label>
-        <input type="number" id="current" placeholder="例如 12.0" step="any">
-
-        <button onclick="calculate()" style="margin-top:15px;">计算</button>
-    </div>
-
-    <div class="section">
-        <div class="result" id="result">请输入任意一个值进行换算</div>
-    </div>
-
-    <div class="section">
-        <h3>常用换算示例（可直接点击按钮填充）</h3>
-        <table>
-            <tr><th>类型</th><th>原始值范围</th><th>工程量范围</th><th>典型电流对应</th></tr>
-            <tr><td>S7-200/SMART</td><td>6400~32000</td><td>自定义</td><td>4mA → 6400，20mA → 32000</td></tr>
-            <tr><td>S7-1200/1500</td><td>5530~27648</td><td>自定义</td><td>4mA → 5530，20mA → 27648</td></tr>
-            <tr><td>温度（PT100等）</td><td>6400~32000</td><td>-50~150°C</td><td>4mA → -50°C，20mA → 150°C</td></tr>
-            <tr><td>压力</td><td>6400~32000</td><td>0~10 MPa</td><td>4mA → 0 MPa，20mA → 10 MPa</td></tr>
-            <tr><td>流量</td><td>6400~32000</td><td>0~100 m³/h</td><td>4mA → 0，20mA → 100</td></tr>
-            <tr><td>百分比</td><td>6400~32000</td><td>0~100%</td><td>4mA → 0%，20mA → 100%</td></tr>
-        </table>
-    </div>
+    <!-- 常用示例表格 -->
+    <table class="preset-table">
+        <tr>
+            <th>类型</th><th>原始值范围</th><th>工程量范围</th><th>电流对应</th>
+        </tr>
+        <tr><td>S7-200/SMART</td><td>6400~32000</td><td>自定义</td><td>4mA→6400，20mA→32000</td></tr>
+        <tr><td>S7-1200/1500</td><td>5530~27648</td><td>自定义</td><td>4mA→5530，20mA→27648</td></tr>
+        <tr><td>温度</td><td>6400~32000</td><td>-50~150°C</td><td>4mA→-50°C，20mA→150°C</td></tr>
+        <tr><td>压力</td><td>6400~32000</td><td>0~10 MPa</td><td>4mA→0，20mA→10</td></tr>
+        <tr><td>流量</td><td>6400~32000</td><td>0~100 m³/h</td><td>4mA→0，20mA→100</td></tr>
+        <tr><td>百分比</td><td>6400~32000</td><td>0~100%</td><td>4mA→0%，20mA→100%</td></tr>
+    </table>
 </div>
 
 <script>
@@ -125,7 +207,7 @@ function calculate() {
     const curInput = parseFloat(document.getElementById('current').value);
 
     if (isNaN(isl) || isNaN(ish) || isNaN(osl) || isNaN(osh) || ish <= isl || osh <= osl) {
-        document.getElementById('result').innerHTML = '参数范围设置错误，请检查Ish>Isl、Osh>Osl';
+        document.getElementById('result').innerHTML = '参数范围错误：Ish 必须大于 Isl，Osh 必须大于 Osl';
         return;
     }
 
@@ -141,7 +223,7 @@ function calculate() {
         } else {
             const eng = ((rawInput - isl) * engRange / rawRange) + osl;
             const current = 4 + (rawInput - isl) * 16 / rawRange;
-            result += `原始值 <strong>${rawInput}</strong> → 工程量 <strong>${eng.toFixed(2)}</strong> → 电流 <strong>${current.toFixed(2)} mA</strong><br>`;
+            result += `原始值 <strong>${rawInput.toFixed(0)}</strong> → 工程量 <strong>${eng.toFixed(2)}</strong> → 电流 <strong>${current.toFixed(2)} mA</strong><br>`;
         }
     }
 
@@ -150,4 +232,26 @@ function calculate() {
         if (engInput < osl || engInput > osh) {
             result += `工程量 ${engInput} 超出范围（${osl}~${osh}）！<br>`;
         } else {
-            const raw = ((engInput - osl
+            const raw = ((engInput - osl) * rawRange / engRange) + isl;
+            const current = 4 + (raw - isl) * 16 / rawRange;
+            result += `工程量 <strong>${engInput.toFixed(2)}</strong> → 原始值 <strong>${raw.toFixed(0)}</strong> → 电流 <strong>${current.toFixed(2)} mA</strong><br>`;
+        }
+    }
+
+    // 输入电流 → 原始值 + 工程量
+    if (!isNaN(curInput)) {
+        if (curInput < 4 || curInput > 20) {
+            result += `电流 ${curInput} mA 超出4-20mA范围！<br>`;
+        } else {
+            const raw = isl + (curInput - 4) * rawRange / 16;
+            const eng = osl + (curInput - 4) * engRange / 16;
+            result += `电流 <strong>${curInput.toFixed(2)} mA</strong> → 原始值 <strong>${raw.toFixed(0)}</strong> → 工程量 <strong>${eng.toFixed(2)}</strong><br>`;
+        }
+    }
+
+    if (!result) result = '请输入电流、工程量或原始值中的任意一个进行换算';
+    document.getElementById('result').innerHTML = result;
+}
+</script>
+</body>
+</html>
