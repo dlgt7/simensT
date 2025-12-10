@@ -2,42 +2,59 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>西门子PLC模拟量换算工具（4-20mA、温度、压力、流量等）</title>
+<title>西门子PLC模拟量换算工具（自由输入Ish/Isl/Osh/Osl）</title>
 <style>
     body { font-family: "Microsoft YaHei", Arial, sans-serif; margin: 20px; background: #f4f4f4; }
-    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .container { max-width: 1000px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
     h1 { text-align: center; color: #0056b3; }
-    .section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; }
-    label { display: block; margin: 10px 0 5px; font-weight: bold; }
-    input, select { width: 100%; padding: 8px; box-sizing: border-box; }
-    button { padding: 10px 20px; background: #0056b3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .section { margin: 20px 0; padding: 20px; background: #f9f9f9; border-radius: 8px; }
+    label { display: block; margin: 12px 0 6px; font-weight: bold; }
+    input, select { width: 100%; padding: 10px; box-sizing: border-box; font-size: 1em; }
+    .input-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .input-group input { flex: 1; min-width: 150px; }
+    button { padding: 12px 24px; background: #0056b3; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 1em; }
     button:hover { background: #003d80; }
-    .result { margin-top: 15px; font-size: 1.2em; color: #d32f2f; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    .btn-group button { margin-right: 10px; margin-bottom: 10px; }
+    .result { margin-top: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; font-size: 1.2em; color: #d32f2f; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
     th { background: #0056b3; color: white; }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>西门子PLC模拟量换算工具</h1>
-    <p style="text-align:center;">参考微信文章《教你几步搞定西门子PLC模拟量计算》及TIA Portal常用公式</p>
+    <h1>西门子PLC模拟量换算工具（自由输入范围）</h1>
+    <p style="text-align:center;">支持任意原始值范围（Ish/Isl）和工程量范围（Osh/Osl），自动计算电流（4-20mA）</p>
 
     <div class="section">
-        <label>选择PLC系列（影响原始值范围）</label>
-        <select id="plcType">
-            <option value="200">S7-200 / SMART（6400~32000）</option>
-            <option value="1200">S7-1200/1500（5530~27648）</option>
-        </select>
+        <h3>参数设置（Ish、Isl、Osh、Osl 可自由修改）</h3>
+        <div class="input-group">
+            <div>
+                <label>原始值下限 Isl</label>
+                <input type="number" id="isl" value="6400" step="any">
+            </div>
+            <div>
+                <label>原始值上限 Ish</label>
+                <input type="number" id="ish" value="32000" step="any">
+            </div>
+            <div>
+                <label>工程量下限 Osl</label>
+                <input type="number" id="osl" value="-50" step="any">
+            </div>
+            <div>
+                <label>工程量上限 Osh</label>
+                <input type="number" id="osh" value="150" step="any">
+            </div>
+        </div>
 
-        <label>选择常用换算类型</label>
-        <select id="preset">
-            <option value="custom">自定义</option>
-            <option value="4-20mA">4-20mA → 通用工程量（例如0~100%）</option>
-            <option value="temp">温度（例如-50~150°C）</option>
-            <option value="pressure">压力（例如0~10MPa）</option>
-            <option value="flow">流量（例如0~100m³/h）</option>
-        </select>
+        <div class="btn-group" style="margin-top:15px;">
+            <button onclick="setPreset('s7-200')">S7-200/SMART (6400~32000)</button>
+            <button onclick="setPreset('s7-1200')">S7-1200/1500 (5530~27648)</button>
+            <button onclick="setPreset('temp')">温度 -50~150°C</button>
+            <button onclick="setPreset('pressure')">压力 0~10 MPa</button>
+            <button onclick="setPreset('flow')">流量 0~100 m³/h</button>
+            <button onclick="setPreset('percent')">百分比 0~100%</button>
+        </div>
     </div>
 
     <div class="section">
@@ -47,88 +64,90 @@
         <label>输入工程量（Engineering Value）</label>
         <input type="number" id="eng" placeholder="例如 50.0" step="any">
 
-        <label>工程量范围（下限 ~ 上限）</label>
-        <input type="number" id="engMin" placeholder="例如 -50" value="-50" step="any">
-        <input type="number" id="engMax" placeholder="例如 150" value="150" step="any">
+        <label>输入电流（mA，4-20mA）</label>
+        <input type="number" id="current" placeholder="例如 12.0" step="any">
 
-        <button onclick="calculate()">计算</button>
+        <button onclick="calculate()" style="margin-top:15px;">计算</button>
     </div>
 
     <div class="section">
-        <div class="result" id="result">结果将显示在这里</div>
+        <div class="result" id="result">请输入任意一个值进行换算</div>
     </div>
 
     <div class="section">
-        <h3>常用换算示例（参考西门子标准）</h3>
+        <h3>常用换算示例（可直接点击按钮填充）</h3>
         <table>
-            <tr><th>类型</th><th>信号</th><th>原始值范围</th><th>工程量范围</th><th>典型公式（Raw → Eng）</th></tr>
-            <tr><td>4-20mA通用</td><td>4-20mA</td><td>6400~32000 (S7-200)</td><td>自定义</td><td>Eng = [(Raw-6400)×(EngMax-EngMin)/25600] + EngMin</td></tr>
-            <tr><td>4-20mA通用</td><td>4-20mA</td><td>5530~27648 (S7-1200/1500)</td><td>自定义</td><td>Eng = [(Raw-5530)×(EngMax-EngMin)/22118] + EngMin</td></tr>
-            <tr><td>温度</td><td>4-20mA</td><td>6400~32000</td><td>-50~150°C</td><td>Temp = [(Raw-6400)×200/25600] - 50</td></tr>
-            <tr><td>压力</td><td>4-20mA</td><td>6400~32000</td><td>0~10 MPa</td><td>Pressure = [(Raw-6400)×10/25600]</td></tr>
-            <tr><td>流量</td><td>4-20mA</td><td>6400~32000</td><td>0~100 m³/h</td><td>Flow = [(Raw-6400)×100/25600]</td></tr>
+            <tr><th>类型</th><th>原始值范围</th><th>工程量范围</th><th>典型电流对应</th></tr>
+            <tr><td>S7-200/SMART</td><td>6400~32000</td><td>自定义</td><td>4mA → 6400，20mA → 32000</td></tr>
+            <tr><td>S7-1200/1500</td><td>5530~27648</td><td>自定义</td><td>4mA → 5530，20mA → 27648</td></tr>
+            <tr><td>温度（PT100等）</td><td>6400~32000</td><td>-50~150°C</td><td>4mA → -50°C，20mA → 150°C</td></tr>
+            <tr><td>压力</td><td>6400~32000</td><td>0~10 MPa</td><td>4mA → 0 MPa，20mA → 10 MPa</td></tr>
+            <tr><td>流量</td><td>6400~32000</td><td>0~100 m³/h</td><td>4mA → 0，20mA → 100</td></tr>
+            <tr><td>百分比</td><td>6400~32000</td><td>0~100%</td><td>4mA → 0%，20mA → 100%</td></tr>
         </table>
     </div>
 </div>
 
 <script>
+function setPreset(type) {
+    const isl = document.getElementById('isl');
+    const ish = document.getElementById('ish');
+    const osl = document.getElementById('osl');
+    const osh = document.getElementById('osh');
+
+    if (type === 's7-200') {
+        isl.value = 6400; ish.value = 32000;
+    } else if (type === 's7-1200') {
+        isl.value = 5530; ish.value = 27648;
+    } else if (type === 'temp') {
+        isl.value = 6400; ish.value = 32000;
+        osl.value = -50; osh.value = 150;
+    } else if (type === 'pressure') {
+        isl.value = 6400; ish.value = 32000;
+        osl.value = 0; osh.value = 10;
+    } else if (type === 'flow') {
+        isl.value = 6400; ish.value = 32000;
+        osl.value = 0; osh.value = 100;
+    } else if (type === 'percent') {
+        isl.value = 6400; ish.value = 32000;
+        osl.value = 0; osh.value = 100;
+    }
+}
+
 function calculate() {
-    const plcType = document.getElementById('plcType').value;
-    const preset = document.getElementById('preset').value;
-    let rawMin = 6400, rawMax = 32000;
-    if (plcType === '1200') {
-        rawMin = 5530; rawMax = 27648;
+    const isl = parseFloat(document.getElementById('isl').value);
+    const ish = parseFloat(document.getElementById('ish').value);
+    const osl = parseFloat(document.getElementById('osl').value);
+    const osh = parseFloat(document.getElementById('osh').value);
+
+    const rawInput = parseFloat(document.getElementById('raw').value);
+    const engInput = parseFloat(document.getElementById('eng').value);
+    const curInput = parseFloat(document.getElementById('current').value);
+
+    if (isNaN(isl) || isNaN(ish) || isNaN(osl) || isNaN(osh) || ish <= isl || osh <= osl) {
+        document.getElementById('result').innerHTML = '参数范围设置错误，请检查Ish>Isl、Osh>Osl';
+        return;
     }
 
-    const raw = parseFloat(document.getElementById('raw').value);
-    const eng = parseFloat(document.getElementById('eng').value);
-    let engMin = parseFloat(document.getElementById('engMin').value);
-    let engMax = parseFloat(document.getElementById('engMax').value);
-
-    // 根据预设自动填充量程
-    if (preset === '4-20mA') {
-        engMin = 0; engMax = 100;
-        document.getElementById('engMin').value = engMin;
-        document.getElementById('engMax').value = engMax;
-    } else if (preset === 'temp') {
-        engMin = -50; engMax = 150;
-        document.getElementById('engMin').value = engMin;
-        document.getElementById('engMax').value = engMax;
-    } else if (preset === 'pressure') {
-        engMin = 0; engMax = 10;
-        document.getElementById('engMin').value = engMin;
-        document.getElementById('engMax').value = engMax;
-    } else if (preset === 'flow') {
-        engMin = 0; engMax = 100;
-        document.getElementById('engMin').value = engMin;
-        document.getElementById('engMax').value = engMax;
-    }
+    const rawRange = ish - isl;
+    const engRange = osh - osl;
 
     let result = '';
 
-    // Raw → Eng
-    if (!isNaN(raw)) {
-        if (raw < rawMin || raw > rawMax) {
-            result += `原始值 ${raw} 超出范围（${rawMin}~${rawMax}），可能为故障或超限！<br>`;
+    // 输入原始值 → 工程量 + 电流
+    if (!isNaN(rawInput)) {
+        if (rawInput < isl || rawInput > ish) {
+            result += `原始值 ${rawInput} 超出范围（${isl}~${ish}）！<br>`;
         } else {
-            const engValue = ((raw - rawMin) * (engMax - engMin) / (rawMax - rawMin)) + engMin;
-            result += `原始值 ${raw} → 工程量 <strong>${engValue.toFixed(2)}</strong><br>`;
+            const eng = ((rawInput - isl) * engRange / rawRange) + osl;
+            const current = 4 + (rawInput - isl) * 16 / rawRange;
+            result += `原始值 <strong>${rawInput}</strong> → 工程量 <strong>${eng.toFixed(2)}</strong> → 电流 <strong>${current.toFixed(2)} mA</strong><br>`;
         }
     }
 
-    // Eng → Raw
-    if (!isNaN(eng)) {
-        if (eng < engMin || eng > engMax) {
-            result += `工程量 ${eng} 超出范围（${engMin}~${engMax}）！<br>`;
+    // 输入工程量 → 原始值 + 电流
+    if (!isNaN(engInput)) {
+        if (engInput < osl || engInput > osh) {
+            result += `工程量 ${engInput} 超出范围（${osl}~${osh}）！<br>`;
         } else {
-            const rawValue = ((eng - engMin) * (rawMax - rawMin) / (engMax - engMin)) + rawMin;
-            result += `工程量 ${eng} → 原始值 <strong>${rawValue.toFixed(0)}</strong><br>`;
-        }
-    }
-
-    if (!result) result = '请输入原始值或工程量进行换算';
-    document.getElementById('result').innerHTML = result;
-}
-</script>
-</body>
-</html>
+            const raw = ((engInput - osl
